@@ -1,0 +1,90 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: debian-11
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v3
+      
+    - name: Build the Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: leocutolo/backend:latest
+    
+    - name: Run docker container
+      run: docker run -d -p 3000:3000 -e MONGO_URI=${{ secrets.MONGO_URI }} -e JWT_SECRET=${{ secrets.JWT_SECRET }} --name backend leocutolo/backend:latest
+      
+    - name: Test web server
+      run: |
+        if curl --fail localhost:3000; then
+          echo "Web server is running"
+        else
+          echo "Web server isn't running"
+          exit 1
+        fi
+    
+    - name: Test register
+      run: |
+        curl --request POST \
+        --url http://localhost:3000/users/register \
+        --header 'Content-Type: application/json' \
+        --data '{
+        "username": "testGH",
+        "password": "testGH"
+        }'
+        if [ $? -eq 0 ]; then
+          echo "register ok"
+        else
+          echo "register ko"
+          exit 1
+        fi
+    
+    - name: Test login
+      run: |
+        jwt=$(curl --request POST \
+          --url http://localhost:3000/users/login \
+          --header 'Content-Type: application/json' \
+          --data '{
+          "username": "testGH",
+          "password": "testGH"
+        }' | jq -r '.jwt')
+        echo $jwt > jwt.txt
+        if [ ! -z $jwt ]; then
+          echo "register ok"
+        else
+          echo "register ko"
+          exit 1
+        fi
+    
+    - name: test delete user
+      run: |
+        curl --request DELETE \
+        --url http://localhost:3000/users/me \
+        --header 'Authorization: Bearer $(echo jwt.txt)'
+        if [ $? -eq 0 ]; then
+          echo "delete ok"
+        else
+          echo "delete ko"
+          exit 1
+        fi
+    
+    - name: Push to registry
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: leocutolo/backend:latest
