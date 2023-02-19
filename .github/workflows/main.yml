@@ -27,14 +27,18 @@ jobs:
     - name: Run docker container
       run: docker run -d --name backend -p 3000:3000 -e MONGO_URI="${{ secrets.MONGO_URI }}" -e JWT_SECRET="${{ secrets.JWT_SECRET }}" leocutolo/backend:latest
 
-      
+    - name: sleep 1 min
+      run: |
+        sleep 1m
+
     - name: Test web server
       run: |
-        if curl --fail localhost:3000; then
-          echo "Web server is running"
-        else
-          echo "Web server isn't running"
+        curl -sSf localhost:3000 >/dev/null
+        if [ $? -ne 0 ]; then
+          echo "Page not found."
           exit 1
+        else
+          echo "Page found."
         fi
     
     - name: Test register
