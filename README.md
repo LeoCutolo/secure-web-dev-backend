@@ -30,3 +30,5 @@ There are 2 access level: `user` and `admin`. Each user have a `role` property t
 Users can authenticate themselves with a Json Web Token, obtained by logging-in with their `username` and `password`.
 
 Passwords are hashed, and the hashes are never shown in API responses.
+
+In order to test CI, it is important that mongo is available from anywhere
