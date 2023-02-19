@@ -25,7 +25,8 @@ jobs:
         tags: leocutolo/backend:latest
     
     - name: Run docker container
-      run: docker run -d --name backend -p 3000:3000 -e MONGO_URI=${{ secrets.MONGO_URI }} -e JWT_SECRET=${{ secrets.JWT_SECRET }} leocutolo/backend:latest
+      run: docker run -d --name backend -p 3000:3000 -e MONGO_URI="${{ secrets.MONGO_URI }}" -e JWT_SECRET="${{ secrets.JWT_SECRET }}" leocutolo/backend:latest
+
       
     - name: Test web server
       run: |
